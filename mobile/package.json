@@ -1,0 +1,44 @@
+{
+  "name": "haitatsu-note",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@expo/metro-runtime": "^57.0.15",
+    "@react-native-async-storage/async-storage": "^3.1.1",
+    "expo": "~57.0.21",
+    "expo-file-system": "^57.0.6",
+    "expo-sharing": "^57.0.18",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "^19.2.3",
+    "react-native": "0.86.3",
+    "react-native-google-mobile-ads": "^16.5.0",
+    "react-native-safe-area-context": "^5.9.1",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.20.2",
+    "@types/react": "~19.2.2",
+    "jest": "^29.7.0",
+    "jest-expo": "^57.0.5",
+    "react-test-renderer": "^19.2.3",
+    "sharp": "^0.35.4",
+    "tsx": "^4.23.13",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "test": "npm run typecheck && npm run test:logic && npm run test:ui",
+    "test:logic": "node --import tsx --test tests/*.test.ts",
+    "test:ui": "jest",
+    "typecheck": "tsc --noEmit",
+    "icons": "node scripts/make-icons.mjs",
+    "export:web": "EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 expo export --platform web --output-dir dist-web",
+    "screenshots": "npm run export:web && node scripts/serve-and-shoot.mjs"
+  },
+  "private": true
+}
