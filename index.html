@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ポスカレ — 撮る・貼る → カレンダーに一括登録</title>
+<meta name="description" content="ポスターやおたよりを撮影すると日時を読み取り、Google カレンダーや iPhone のカレンダーに一括登録できるツール。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <h1>ポスカレ</h1>
+  <p class="tagline">ポスターを撮る／予定を貼る → まとめてカレンダーへ</p>
+</header>
+
+<main>
+  <section class="card" aria-labelledby="input-heading">
+    <h2 id="input-heading">1. 予定を取り込む</h2>
+
+    <div class="input-row">
+      <label class="btn primary">
+        📷 カメラで撮る
+        <input type="file" id="camera-input" accept="image/*" capture="environment" multiple hidden>
+      </label>
+      <label class="btn">
+        🖼 画像を選ぶ
+        <input type="file" id="file-input" accept="image/*" multiple hidden>
+      </label>
+    </div>
+
+    <ul id="thumbs" class="thumbs" aria-live="polite"></ul>
+
+    <button type="button" id="scan-btn" class="btn primary wide" disabled>画像から予定を読み取る</button>
+    <p id="ai-hint" class="hint">画像の読み取りには Gemini の API キーが必要です（下の「AI の設定」で登録）。</p>
+
+    <details class="fold">
+      <summary>テキストから読み取る（API キー不要）</summary>
+      <p class="hint">おたよりの文面やメールをそのまま貼り付けてください。「10月12日(日) 14:00〜16:00」「令和8年12月24日」「1/5〜1/7」などを解釈します。</p>
+      <textarea id="text-input" rows="6" placeholder="秋祭り&#10;10月12日(日) 14:00〜16:00 会場: 中央公園&#10;11/3 文化祭"></textarea>
+      <div class="input-row">
+        <button type="button" id="parse-btn" class="btn">テキストを解析</button>
+        <button type="button" id="sample-btn" class="btn ghost">サンプルを入れる</button>
+      </div>
+    </details>
+
+    <details class="fold" id="ai-settings">
+      <summary>AI の設定</summary>
+      <label class="field">
+        <span>Gemini API キー</span>
+        <input type="password" id="api-key" autocomplete="off" placeholder="AIza...">
+      </label>
+      <label class="field">
+        <span>モデル</span>
+        <input type="text" id="model" placeholder="gemini-2.5-flash">
+      </label>
+      <p class="hint">キーはこの端末のブラウザ（localStorage）にのみ保存され、Google 以外には送信されません。取得は <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> から。</p>
+      <button type="button" id="clear-key" class="btn ghost small">キーを消す</button>
+    </details>
+
+    <p id="status" class="status" role="status"></p>
+  </section>
+
+  <section class="card" aria-labelledby="list-heading">
+    <div class="section-head">
+      <h2 id="list-heading">2. 確認・修正</h2>
+      <span id="count" class="count">0 件</span>
+    </div>
+    <div id="events" class="events"></div>
+    <div class="input-row">
+      <button type="button" id="add-btn" class="btn ghost small">＋ 手で 1 件追加</button>
+      <button type="button" id="clear-btn" class="btn ghost small">すべて消す</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="export-heading">
+    <h2 id="export-heading">3. カレンダーに一括登録</h2>
+    <div class="input-row">
+      <button type="button" id="ics-btn" class="btn primary">.ics をダウンロード</button>
+      <button type="button" id="gcal-btn" class="btn">Google カレンダーで開く</button>
+      <button type="button" id="csv-btn" class="btn ghost">CSV（Google 用）</button>
+    </div>
+    <label class="field inline">
+      <span>時刻が無い予定の既定の長さ</span>
+      <select id="default-duration">
+        <option value="60">1 時間</option>
+        <option value="90">1 時間 30 分</option>
+        <option value="120">2 時間</option>
+      </select>
+    </label>
+    <p class="hint">
+      <strong>.ics</strong> が最短です。iPhone / Android ならファイルを開くだけ、PC の Google カレンダーなら
+      「設定 → インポート」でまとめて登録できます。<strong>Google カレンダーで開く</strong> は選択した予定を 1 件ずつ登録画面で開きます（ポップアップの許可が必要）。
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>画像とテキストはブラウザ内で処理され、AI 読み取りを使った場合のみ Google の Gemini API に送信されます。サーバーには何も保存されません。</p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
