@@ -28,6 +28,11 @@ export function resolveTimes(ev, defaultMinutes = 60) {
   return { start, end, endDate };
 }
 
+/** 出典 URL は説明文の末尾に残す（カレンダー側で後から確認できるように） */
+export function describe(ev) {
+  return [ev.notes, ev.sourceUrl].filter(Boolean).join('\n');
+}
+
 function escapeICS(text) {
   return String(text || '')
     .replace(/\\/g, '\\\\')
@@ -100,7 +105,9 @@ export function buildICS(events, options = {}) {
     }
     lines.push(`SUMMARY:${escapeICS(ev.title || '予定')}`);
     if (ev.location) lines.push(`LOCATION:${escapeICS(ev.location)}`);
-    if (ev.notes) lines.push(`DESCRIPTION:${escapeICS(ev.notes)}`);
+    const description = describe(ev);
+    if (description) lines.push(`DESCRIPTION:${escapeICS(description)}`);
+    if (ev.sourceUrl) lines.push(`URL:${ev.sourceUrl}`);
     lines.push('END:VEVENT');
   });
 
@@ -118,7 +125,7 @@ export function buildCSV(events, options = {}) {
       const [y, m, dd] = d.split('-');
       return `${Number(m)}/${Number(dd)}/${y}`;
     };
-    return [ev.title || '予定', fmt(ev.date), start, fmt(endDate), end, ev.allDay ? 'True' : 'False', ev.notes || '', ev.location || ''].map(esc).join(',');
+    return [ev.title || '予定', fmt(ev.date), start, fmt(endDate), end, ev.allDay ? 'True' : 'False', describe(ev), ev.location || ''].map(esc).join(',');
   });
   return [header.join(','), ...rows].join('\r\n') + '\r\n';
 }
@@ -139,6 +146,7 @@ export function gcalUrl(ev, options = {}) {
     ctz: TZID,
   });
   if (ev.location) params.set('location', ev.location);
-  if (ev.notes) params.set('details', ev.notes);
+  const details = describe(ev);
+  if (details) params.set('details', details);
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }

@@ -1,9 +1,9 @@
 import { parseEvents } from './parse.js';
-import { extractFromImages } from './ai.js';
+import { extractFromImages, extractFromWeb } from './ai.js';
 import { buildICS, buildCSV, gcalUrl } from './export.js';
 
 const $ = (id) => document.getElementById(id);
-const STORE = { key: 'poscal.apiKey', model: 'poscal.model', events: 'poscal.events', duration: 'poscal.duration' };
+const STORE = { key: 'poscal.apiKey', model: 'poscal.model', events: 'poscal.events', duration: 'poscal.duration', preset: 'poscal.preset' };
 
 let images = []; // {mimeType, base64, url}
 let events = [];
@@ -19,6 +19,7 @@ function load() {
   $('api-key').value = localStorage.getItem(STORE.key) || '';
   $('model').value = localStorage.getItem(STORE.model) || 'gemini-2.5-flash';
   $('default-duration').value = localStorage.getItem(STORE.duration) || '60';
+  $('preset').value = localStorage.getItem(STORE.preset) || 'general';
   try {
     events = JSON.parse(localStorage.getItem(STORE.events) || '[]');
   } catch {
@@ -30,6 +31,7 @@ function save() {
   localStorage.setItem(STORE.key, $('api-key').value.trim());
   localStorage.setItem(STORE.model, $('model').value.trim() || 'gemini-2.5-flash');
   localStorage.setItem(STORE.duration, $('default-duration').value);
+  localStorage.setItem(STORE.preset, $('preset').value);
   localStorage.setItem(STORE.events, JSON.stringify(events));
 }
 
@@ -176,6 +178,15 @@ function render() {
 
     const actions = document.createElement('div');
     actions.className = 'event-actions';
+    if (ev.sourceUrl) {
+      const src = document.createElement('a');
+      src.href = ev.sourceUrl;
+      src.target = '_blank';
+      src.rel = 'noopener noreferrer';
+      src.className = 'source';
+      src.textContent = `出典: ${hostOf(ev.sourceUrl)}`;
+      actions.append(src);
+    }
     const link = document.createElement('a');
     link.href = gcalUrl(ev, { defaultMinutes: duration() });
     link.target = '_blank';
@@ -197,7 +208,16 @@ function render() {
   save();
 }
 
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return 'リンク';
+  }
+}
+
 const duration = () => Number($('default-duration').value || 60);
+const preset = () => $('preset').value;
 const selected = () => events.filter((e) => e.selected !== false);
 
 /* ---------- 書き出し ---------- */
@@ -219,6 +239,18 @@ function stamp() {
 }
 
 /* ---------- イベント配線 ---------- */
+const model = () => $('model').value.trim() || undefined;
+
+function requireKey() {
+  const apiKey = $('api-key').value.trim();
+  if (!apiKey) {
+    $('ai-settings').open = true;
+    status('先に Gemini の API キーを登録してください。', 'error');
+    return '';
+  }
+  return apiKey;
+}
+
 function init() {
   load();
   render();
@@ -228,22 +260,45 @@ function init() {
   $('file-input').addEventListener('change', (e) => addFiles(e.target.files));
 
   $('scan-btn').addEventListener('click', async () => {
-    const apiKey = $('api-key').value.trim();
-    if (!apiKey) {
-      $('ai-settings').open = true;
-      status('先に Gemini の API キーを登録してください。', 'error');
-      return;
-    }
+    const apiKey = requireKey();
+    if (!apiKey) return;
     $('scan-btn').disabled = true;
     status('画像を読み取っています…', 'busy');
     try {
-      const found = await extractFromImages(images, { apiKey, model: $('model').value.trim() || undefined });
+      const found = await extractFromImages(images, { apiKey, model: model(), preset: preset() });
       addEvents(found);
     } catch (err) {
       status(err.message, 'error');
     } finally {
       $('scan-btn').disabled = images.length === 0;
     }
+  });
+
+  $('web-btn').addEventListener('click', async () => {
+    const apiKey = requireKey();
+    if (!apiKey) return;
+    const urls = $('url-input').value.split('\n').map((u) => u.trim()).filter(Boolean);
+    const query = $('query-input').value.trim();
+    if (!urls.length && !query) {
+      status('URL か検索キーワードを入力してください。', 'error');
+      return;
+    }
+    $('web-btn').disabled = true;
+    status(query ? '検索してページを読んでいます…（20 秒ほどかかります）' : 'ページを読んでいます…', 'busy');
+    try {
+      addEvents(await extractFromWeb({ query, urls, apiKey, model: model(), preset: preset() }));
+    } catch (err) {
+      status(err.message, 'error');
+    } finally {
+      $('web-btn').disabled = false;
+    }
+  });
+
+  document.querySelectorAll('.chips [data-query]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $('query-input').value = btn.dataset.query;
+      $('query-input').focus();
+    });
   });
 
   $('parse-btn').addEventListener('click', () => {
@@ -308,7 +363,7 @@ function init() {
     status(`${list.length} 件を Google カレンダーの登録画面で開きます…`);
   });
 
-  ['api-key', 'model', 'default-duration'].forEach((id) => $(id).addEventListener('change', save));
+  ['api-key', 'model', 'default-duration', 'preset'].forEach((id) => $(id).addEventListener('change', save));
   $('clear-key').addEventListener('click', () => {
     $('api-key').value = '';
     localStorage.removeItem(STORE.key);

@@ -3,28 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ポスカレ — 撮る・貼る → カレンダーに一括登録</title>
-<meta name="description" content="ポスターやおたよりを撮影すると日時を読み取り、Google カレンダーや iPhone のカレンダーに一括登録できるツール。">
+<title>ポスカレ — 撮る・貼る・探す → カレンダーに一括登録</title>
+<meta name="description" content="ポスターやおたよりの撮影、URL、検索キーワードから日時を読み取り、Google カレンダーや iPhone のカレンダーに一括登録できるツール。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header class="site-header">
   <h1>ポスカレ</h1>
-  <p class="tagline">ポスターを撮る／予定を貼る → まとめてカレンダーへ</p>
+  <p class="tagline">撮る／貼る／URL・キーワードで探す → まとめてカレンダーへ</p>
 </header>
 
 <main>
   <section class="card" aria-labelledby="input-heading">
     <h2 id="input-heading">1. 予定を取り込む</h2>
 
+    <label class="field inline">
+      <span>用途</span>
+      <select id="preset">
+        <option value="general">汎用</option>
+        <option value="oshi">推し活（公演・チケット締切）</option>
+        <option value="school">学校・園の行事（持ち物・締切）</option>
+      </select>
+    </label>
+
+    <h3 class="sub">📷 撮る・画像から</h3>
     <div class="input-row">
       <label class="btn primary">
-        📷 カメラで撮る
+        カメラで撮る
         <input type="file" id="camera-input" accept="image/*" capture="environment" multiple hidden>
       </label>
       <label class="btn">
-        🖼 画像を選ぶ
+        画像を選ぶ
         <input type="file" id="file-input" accept="image/*" multiple hidden>
       </label>
     </div>
@@ -32,7 +42,23 @@
     <ul id="thumbs" class="thumbs" aria-live="polite"></ul>
 
     <button type="button" id="scan-btn" class="btn primary wide" disabled>画像から予定を読み取る</button>
-    <p id="ai-hint" class="hint">画像の読み取りには Gemini の API キーが必要です（下の「AI の設定」で登録）。</p>
+    <p id="ai-hint" class="hint">画像・URL・キーワードの読み取りには Gemini の API キーが必要です（下の「AI の設定」で登録）。</p>
+
+    <h3 class="sub">🔗 URL・キーワードから</h3>
+    <label class="field">
+      <span>ページの URL（改行で複数可）</span>
+      <textarea id="url-input" rows="2" placeholder="https://example.com/tour&#10;https://example.jp/school/schedule"></textarea>
+    </label>
+    <label class="field">
+      <span>または検索キーワード</span>
+      <input type="text" id="query-input" placeholder="◯◯ ツアー 2026 日程">
+    </label>
+    <div class="input-row chips">
+      <button type="button" class="btn ghost small" data-query="の 2026年 ツアー 公演日程 チケット申込締切">推し活の例</button>
+      <button type="button" class="btn ghost small" data-query="小学校 2026年度 年間行事予定">学校行事の例</button>
+    </div>
+    <button type="button" id="web-btn" class="btn primary wide">URL・キーワードから予定を探す</button>
+    <p class="hint">検索した場合は公式ページとは限りません。<strong>登録前に必ず出典リンクで日程を確認してください。</strong></p>
 
     <details class="fold">
       <summary>テキストから読み取る（API キー不要）</summary>

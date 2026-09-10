@@ -134,3 +134,42 @@ test('別の予定の行から会場を拾ってこない', () => {
   assert.equal(events[0].location, '');
   assert.equal(events[1].location, '学校正門');
 });
+
+/* --- URL・キーワード取り込み --- */
+import { extractJsonArray, sanitize as sanitizeAI, referencedUrls } from '../js/ai.js';
+import { describe as describeEvent } from '../js/export.js';
+
+test('コードフェンスや前置きが混ざっても JSON 配列を取り出す', () => {
+  assert.deepEqual(extractJsonArray('```json\n[{"a":1}]\n```'), [{ a: 1 }]);
+  assert.deepEqual(extractJsonArray('見つかりました。\n[{"a":2}]\n以上です。'), [{ a: 2 }]);
+  assert.deepEqual(extractJsonArray('{"events":[{"a":3}]}'), [{ a: 3 }]);
+  assert.equal(extractJsonArray('取得できませんでした'), null);
+});
+
+test('出典 URL は http/https だけ通す', () => {
+  const out = sanitizeAI([
+    { title: 'a', date: '2026-10-12', allDay: true, sourceUrl: 'javascript:alert(1)' },
+    { title: 'b', date: '2026-10-12', allDay: true, sourceUrl: 'https://example.com/tour' },
+  ]);
+  assert.equal(out[0].sourceUrl, '');
+  assert.equal(out[1].sourceUrl, 'https://example.com/tour');
+});
+
+test('モデルが実際に読んだ URL を出典として集める', () => {
+  const urls = referencedUrls({
+    candidates: [{
+      urlContextMetadata: { urlMetadata: [{ retrievedUrl: 'https://a.example/1' }] },
+      groundingMetadata: { groundingChunks: [{ web: { uri: 'https://b.example/2' } }, { web: { uri: 'https://a.example/1' } }] },
+    }],
+  });
+  assert.deepEqual(urls, ['https://a.example/1', 'https://b.example/2']);
+});
+
+test('出典 URL は書き出しの説明文と URL 欄に残る', () => {
+  const ev = { title: 'ライブ', date: '2026-10-12', start: '18:00', allDay: false, notes: '一般発売', sourceUrl: 'https://example.com/tour' };
+  assert.equal(describeEvent(ev), '一般発売\nhttps://example.com/tour');
+  const ics = buildICS([ev]);
+  assert.match(ics, /DESCRIPTION:一般発売\\nhttps:\/\/example.com\/tour/);
+  assert.match(ics, /URL:https:\/\/example.com\/tour/);
+  assert.match(gcalUrl(ev), /details=/);
+});

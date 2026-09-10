@@ -50,6 +50,9 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 40px; }
   margin-bottom: 16px;
 }
 .card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+.sub { margin: 20px 0 8px; font-size: .92rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 14px; }
+.card > .sub:first-of-type { border-top: none; padding-top: 0; margin-top: 12px; }
+.chips { margin-bottom: 12px; }
 
 .section-head { display: flex; align-items: baseline; justify-content: space-between; }
 .count { color: var(--muted); font-size: .85rem; }
@@ -131,7 +134,9 @@ textarea, input[type="text"], input[type="password"], input[type="date"], input[
 .event-top input[type="text"] { flex: 1; font-weight: 600; }
 .event-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
 .event-grid label { font-size: .78rem; color: var(--muted); display: grid; gap: 2px; }
-.event-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.event-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.event-actions .source { color: var(--muted); text-decoration: underline dotted; }
+.event-actions .remove { margin-left: auto; }
 .event-actions a { color: var(--accent); font-size: .82rem; }
 .remove { border: none; background: none; color: var(--danger); cursor: pointer; font-size: .82rem; }
 
